@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <semaphore.h>
+#include <fcntl.h>
+#include <sys/stat.h>  
 
 void usage(char *argv[])
 {
@@ -27,15 +30,38 @@ int main(int argc, char *argv[])
     }
 
     char option = argv[1][1];
+    sem_t *semaforo;
 
     switch(option) {
         case 'c':
+            if((semaforo = sem_open(argv[2], O_CREAT, 0755, argv[3])) == (sem_t *)-1){
+                printf("Hubo un error");
+                exit(0);
+            }
+            printf("Se creó el semáforo %s", argv[2]);
+
             break;
         case 'u':
+            if(sem_post(semaforo) < 0){
+                printf("No se pudo hacer up del semaforo %s", argv[2]);
+            }else{
+
+            }
+
             break;
         case 'd':
             break;
         case 'b':
+            if( (semaforo = sem_open(argv[2], O_WRONLY)) == SEM_FAILED){
+                printf("No se pudo encontrar el semáforo.");
+                exit(0);   
+            }
+            if(sem_unlink(argv[2]) < 0){
+                printf("No se pudo borrar el semáforo.");
+                exit(0);
+            }
+            printf("Se eliminó el semáforo %s", argv[2]);
+            
             break;
         case 'i':
             break;
