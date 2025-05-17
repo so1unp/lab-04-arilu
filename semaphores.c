@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include <sys/stat.h>  
+#include <sys/stat.h>
 
 void usage(char *argv[])
 {
@@ -19,12 +19,14 @@ void usage(char *argv[])
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
+    if (argc < 2)
+    {
         usage(argv);
         exit(EXIT_FAILURE);
     }
 
-    if (argv[1][0] != '-') {
+    if (argv[1][0] != '-')
+    {
         usage(argv);
         exit(EXIT_FAILURE);
     }
@@ -32,46 +34,94 @@ int main(int argc, char *argv[])
     char option = argv[1][1];
     sem_t *semaforo;
 
-    switch(option) {
-        case 'c':
-            if((semaforo = sem_open(argv[2], O_CREAT, 0755, argv[3])) == (sem_t *)-1){
-                printf("Hubo un error");
-                exit(0);
-            }
-            printf("Se creó el semáforo %s", argv[2]);
-
-            break;
-        case 'u':
-            if(sem_post(semaforo) < 0){
-                printf("No se pudo hacer up del semaforo %s", argv[2]);
-            }else{
-
-            }
-
-            break;
-        case 'd':
-            break;
-        case 'b':
-            if( (semaforo = sem_open(argv[2], O_WRONLY)) == SEM_FAILED){
-                printf("No se pudo encontrar el semáforo.");
-                exit(0);   
-            }
-            if(sem_unlink(argv[2]) < 0){
-                printf("No se pudo borrar el semáforo.");
-                exit(0);
-            }
-            printf("Se eliminó el semáforo %s", argv[2]);
-            
-            break;
-        case 'i':
-            break;
-        case 'h':
-            usage(argv);
-            break;
-        default:
-            fprintf(stderr, "Opción desconocida: %s\n", argv[1]);
+    switch (option)
+    {
+    case 'c':
+        if ((semaforo = sem_open(argv[2], O_CREAT, 0755, atoi(argv[3]))) == SEM_FAILED)
+        {
+            perror("Error al crear el semáforo");
             exit(EXIT_FAILURE);
+        }
+        printf("Se creó el semáforo %s\n", argv[2]);
+        sem_close(semaforo);
+        break;
+
+    case 'u':
+        if ((semaforo = sem_open(argv[2], 0)) == SEM_FAILED)
+        {
+            perror("Error al abrir el semáforo");
+            exit(EXIT_FAILURE);
+        }
+        if (sem_post(semaforo) < 0)
+        {
+            perror("No se pudo hacer UP del semáforo");
+        }
+        else
+        {
+            printf("Se realizó UP del semáforo %s\n", argv[2]);
+        }
+        sem_close(semaforo);
+        break;
+
+    case 'd':
+        if ((semaforo = sem_open(argv[2], 0)) == SEM_FAILED)
+        {
+            perror("Error al abrir el semáforo");
+            exit(EXIT_FAILURE);
+        }
+        if (sem_wait(semaforo) < 0)
+        {
+            perror("No se pudo hacer DOWN del semáforo");
+        }
+        else
+        {
+            printf("Se realizó DOWN del semáforo %s\n", argv[2]);
+        }
+        sem_close(semaforo);
+        break;
+
+    case 'b':
+        if ((semaforo = sem_open(argv[2], 0)) == SEM_FAILED)
+        {
+            perror("Error al abrir el semáforo");
+            exit(EXIT_FAILURE);
+        }
+        if (sem_unlink(argv[2]) < 0)
+        {
+            perror("No se pudo borrar el semáforo");
+            sem_close(semaforo);
+            exit(EXIT_FAILURE);
+        }
+        printf("Se eliminó el semáforo %s\n", argv[2]);
+        sem_close(semaforo);
+        break;
+
+    case 'i':
+        if ((semaforo = sem_open(argv[2], 0)) == SEM_FAILED)
+        {
+            perror("Error al abrir el semáforo");
+            exit(EXIT_FAILURE);
+        }
+        int val;
+        if (sem_getvalue(semaforo, &val) < 0)
+        {
+            perror("No se pudo obtener el valor del semáforo");
+        }
+        else
+        {
+            printf("El contenido del semáforo %s es %d\n", argv[2], val);
+        }
+        sem_close(semaforo);
+        break;
+
+    case 'h':
+        usage(argv);
+        break;
+
+    default:
+        fprintf(stderr, "Opción desconocida: %s\n", argv[1]);
+        exit(EXIT_FAILURE);
     }
-    
+
     exit(EXIT_SUCCESS);
 }
