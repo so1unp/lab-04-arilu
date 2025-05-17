@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <math.h>
 #include <semaphore.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 static void* producer(void*);
 static void* consumer(void*);
@@ -25,6 +27,11 @@ struct params {
     struct buffer* buf;
 } params_t;
 
+
+sem_t semaforoBufferLleno;
+sem_t semaforoBufferVacio;
+pthread_mutex_t mutex;
+
 /* Productor */
 static void* producer(void *p)
 {
@@ -32,8 +39,19 @@ static void* producer(void *p)
 
     struct params *params = (struct params*) p;
 
-    for (i = 0; i < params->items; i++) {
+    for (i = 0; i < params->items; i++) 
+    {
+        if (sem_wait(&semaforoBufferVacio) < 0)
+        {
+            perror("No se pudo hacer DOWN del semáforo");
+        }
+        pthread_mutex_lock(&mutex);
         params->buf->buf[i % params->buf->size] = i;
+        pthread_mutex_unlock(&mutex);
+        if (sem_post(&semaforoBufferLleno) < 0)
+        {
+            perror("No se pudo hacer UP del semáforo");
+        }
         // Espera una cantidad aleatoria de microsegundos.
         usleep(rand() % params->wait_prod);
     }
@@ -52,7 +70,17 @@ static void* consumer(void *p)
     int *reader_results = (int*) malloc(sizeof(int)*params->items);
 
     for (i = 0; i < params->items; i++) {
+        if (sem_wait(&semaforoBufferLleno) < 0)
+        {
+            perror("No se pudo hacer DOWN del semáforo");
+        }
+        pthread_mutex_lock(&mutex);
         reader_results[i] = params->buf->buf[i % params->buf->size];
+        pthread_mutex_unlock(&mutex);
+        if (sem_post(&semaforoBufferVacio) < 0)
+        {
+            perror("No se pudo hacer UP del semáforo");
+        }
         // Espera una cantidad aleatoria de microsegundos.
         usleep(rand() % params->wait_cons);
     }
@@ -130,13 +158,41 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
+    if (sem_init(&semaforoBufferLleno, 0, 0) < 0 ){
+        perror("Error al crear el semáforoBufferLleno");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sem_init(&semaforoBufferVacio, 0, atoi(argv[2])) < 0)
+        {
+            perror("Error al crear el semáforoBufferVacio");
+            exit(EXIT_FAILURE);
+        }
     // Inicializa semilla para números pseudo-aleatorios.
     srand(getpid());
+
+    pthread_mutex_init(&mutex, NULL);
 
     // Crea productor y consumidor
     pthread_create(&producer_t, NULL, producer, params);
     pthread_create(&consumer_t, NULL, consumer, params);
 
-    // Mi trabajo ya esta hecho ...
-    pthread_exit(NULL);
+
+    // Espera a que los hilos terminen
+    pthread_join(producer_t, NULL);
+    pthread_join(consumer_t, NULL);
+
+    // Destruye los semáforos y el mutex
+    sem_destroy(&semaforoBufferLleno);
+    sem_destroy(&semaforoBufferVacio);
+    pthread_mutex_destroy(&mutex);
+    
+
+    // Libera memoria
+    free(buf->buf);
+    free(buf);
+    free(params);
+    exit(EXIT_SUCCESS);
+    /* // Mi trabajo ya esta hecho ...
+    pthread_exit(NULL); */
 }
