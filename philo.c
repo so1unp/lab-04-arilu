@@ -32,7 +32,6 @@ int segs_come = 1;
 
 // Mutex
 static pthread_mutex_t screen = PTHREAD_MUTEX_INITIALIZER;
-/*La condición de carrera es que un filósofo quiera agarrar el mismo tenedor que otro ya tiene agarrado, para evitarla se debería usar un mutex_lock antes de agarrar el tenedor y un mutex_unlock para cuando termine de usarlo (deje de comer)*/
 
 static pthread_mutex_t forks[N];
 sem_t semaforos[N];
