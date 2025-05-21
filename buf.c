@@ -53,7 +53,7 @@ static void* producer(void *p)
             perror("No se pudo hacer UP del semáforo");
         }
         // Espera una cantidad aleatoria de microsegundos.
-        usleep(rand() % params->wait_prod);
+        usleep((unsigned int)(rand() % params->wait_prod));
     }
 
     pthread_exit(0);
@@ -67,7 +67,7 @@ static void* consumer(void *p)
     struct params *params = (struct params*) p;
 
     // Reserva memoria para guardar lo que lee el consumidor.
-    int *reader_results = (int*) malloc(sizeof(int)*params->items);
+    int *reader_results = (int*) malloc(sizeof(int)* (unsigned int)params->items);
 
     for (i = 0; i < params->items; i++) {
         if (sem_wait(&semaforoBufferLleno) < 0)
@@ -82,7 +82,7 @@ static void* consumer(void *p)
             perror("No se pudo hacer UP del semáforo");
         }
         // Espera una cantidad aleatoria de microsegundos.
-        usleep(rand() % params->wait_cons);
+        usleep((unsigned int)(rand() % params->wait_cons));
     }
 
     // Imprime lo que leyo
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
     }
 
     // Crea el buffer
-    buf->buf = (int*) malloc(sizeof(int) * buf->size);
+    buf->buf = (int*) malloc(sizeof(int) * (unsigned int)buf->size);
     if (buf->buf == NULL) {
         perror("malloc");
         exit(EXIT_FAILURE);
@@ -163,13 +163,13 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    if (sem_init(&semaforoBufferVacio, 0, atoi(argv[2])) < 0)
+    if (sem_init(&semaforoBufferVacio, 0, (unsigned int)atoi(argv[1])) < 0)
         {
             perror("Error al crear el semáforoBufferVacio");
             exit(EXIT_FAILURE);
         }
     // Inicializa semilla para números pseudo-aleatorios.
-    srand(getpid());
+    srand((unsigned int)getpid());
 
     pthread_mutex_init(&mutex, NULL);
 
