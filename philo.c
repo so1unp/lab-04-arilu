@@ -46,6 +46,7 @@ void handle_signal(int sig)
     {
         running = 0; // Cambia el estado para detener el programa
     }
+    exit(0);
 }
 
 // Imprime en la posición (x,y) la cadena *fmt.
@@ -67,9 +68,14 @@ void eat(int id)
     int ration, i;
 
     // los tenedores a tomar
-    f[0] = id;
-    f[1] = (id + 1) % N;
-
+    if (id % 2 == 0)
+    {
+        f[0] = id;
+        f[1] = (id + 1) % N;
+    }else{
+        f[0] = (id + 1) % N;
+        f[1] = id;
+    }
     clear_eol(id);
     print(id, 18, "..oO (necesito tenedores)");
     sleep(2);
@@ -93,26 +99,11 @@ void eat(int id)
         sleep(3);
     }
 
-    /*
-        // Toma los tenedores en orden diferente según el ID
-    if (id % 2 == 0) {
-        pthread_mutex_lock(&forks[f[1]]); // Tenedor derecho primero
-        print(id, 30, "tenedor%d", f[1]);
-        pthread_mutex_lock(&forks[f[0]]); // Tenedor izquierdo después
-        print(id, 18, "tenedor%d", f[0]);
-    } else {
-        pthread_mutex_lock(&forks[f[0]]); // Tenedor izquierdo primero
-        print(id, 18, "tenedor%d", f[0]);
-        pthread_mutex_lock(&forks[f[1]]); // Tenedor derecho después
-        print(id, 30, "tenedor%d", f[1]);
-    }
-         */
-
     // Come durante un tiempo.
     for (i = 0, ration = 3 + rand() % 8; i < ration; i++)
     {
         print(id, 40 + i * 4, "ñam");
-        sleep(1 + (rand() % segs_come));
+        sleep(1 + (unsigned int)(rand() % segs_come));
     }
 
     // Libera los tenedores
@@ -147,7 +138,7 @@ void think(int id)
                 sleep(1);
         }
 
-        sleep(1 + rand() % segs_piensa);
+        sleep(1 + (unsigned int)(rand() % segs_piensa));
     } while (t);
 }
 
@@ -192,7 +183,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    srand(getpid());
+    srand((unsigned int)getpid());
 
     clear();
 
